@@ -14,6 +14,5 @@ It can:
 ## Dataset
 BBC News dataset (1490 articles across 5 categories)
 
-## How to run
-Open the notebook in Google Colab and run all cells.
+
 
