@@ -14,7 +14,7 @@ It can:
 ## Dataset
 BBC News dataset (1490 articles across 5 categories)
 
-## click here to try out the demo:
+## Click here to try out the NewsBot demo:
 https://michelleaa68-ux.github.io/Newsbot-2.0-Final/
 
 
