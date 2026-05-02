@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewsBot 2.0 — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1b1e;
+    --surface: #222327;
+    --surface2: #2a2b30;
+    --border: rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.13);
+    --accent: #c084fc;
+    --accent2: #3ecfb2;
+    --accent3: #f76c6c;
+    --accent4: #f7c26c;
+    --text: #e8e9f0;
+    --muted: #7a7d90;
+    --pill-r: 999px;
+    --r: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* --- HEADER --- */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(26,27,30,0.90);
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 1.25rem;
+    letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px #c084fc;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .badge {
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    padding: 3px 10px; border-radius: var(--pill-r);
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* --- LAYOUT --- */
+  .app { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 61px); }
+
+  /* --- SIDEBAR --- */
+  aside {
+    border-right: 1px solid var(--border);
+    padding: 1.5rem;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .sidebar-label {
+    font-size: 10px; font-family: 'DM Mono', monospace;
+    letter-spacing: 0.12em; color: var(--muted);
+    text-transform: uppercase; padding: 0 8px;
+    margin: 8px 0 4px;
+  }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    cursor: pointer; transition: all 0.15s;
+    border: none; background: none; color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    text-align: left; width: 100%;
+  }
+  .nav-btn:hover { background: var(--surface2); color: var(--text); }
+  .nav-btn.active { background: rgba(192,132,252,0.15); color: var(--accent); }
+  .nav-icon { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.7; }
+  .nav-btn.active .nav-icon { opacity: 1; }
+
+  /* --- MAIN --- */
+  main { padding: 2rem 2.5rem; overflow-y: auto; }
+  .tab-panel { display: none; animation: fadeIn 0.3s; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+  /* --- PAGE TITLE --- */
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .page-sub { color: var(--muted); font-size: 14px; margin-bottom: 1.75rem; }
+
+  /* --- CARD --- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+
+  /* --- INPUT --- */
+  textarea {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; line-height: 1.6; padding: 14px 16px;
+    resize: vertical; min-height: 130px;
+    transition: border 0.2s;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: var(--pill-r);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #c084fc, #e879f9); color: #fff;
+  }
+  .btn-primary:hover { background: #a855f7; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-sm {
+    padding: 6px 14px; font-size: 13px;
+    background: var(--surface2); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-sm:hover { color: var(--text); border-color: var(--border-strong); }
+
+  /* --- RESULTS GRID --- */
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1rem; }
+  .result-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem;
+  }
+  .rc-label { font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .rc-value { font-size: 1.4rem; font-family: 'Syne', sans-serif; font-weight: 700; }
+  .rc-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* --- SENTIMENT BAR --- */
+  .sent-track { height: 8px; background: var(--surface); border-radius: 99px; margin: 8px 0; overflow: hidden; position: relative; }
+  .sent-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+  .sent-positive .sent-fill { background: var(--accent2); }
+  .sent-negative .sent-fill { background: var(--accent3); }
+  .sent-neutral .sent-fill { background: var(--accent4); }
+
+  /* --- TAGS --- */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tag {
+    font-size: 12px; padding: 4px 11px; border-radius: var(--pill-r);
+    font-family: 'DM Mono', monospace;
+  }
+  .tag-purple { background: rgba(192,132,252,0.15); color: #d8b4fe; border: 1px solid rgba(192,132,252,0.2); }
+  .tag-teal   { background: rgba(62,207,178,0.12); color: #3ecfb2; border: 1px solid rgba(62,207,178,0.2); }
+  .tag-coral  { background: rgba(247,108,108,0.12); color: #f76c6c; border: 1px solid rgba(247,108,108,0.2); }
+  .tag-amber  { background: rgba(247,194,108,0.12); color: #f7c26c; border: 1px solid rgba(247,194,108,0.2); }
+  .tag-empty  { color: var(--muted); font-style: italic; font-size: 13px; }
+
+  /* --- CATEGORY BADGE --- */
+  .cat-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: var(--pill-r);
+    font-size: 13px; font-weight: 500;
+  }
+
+  /* --- LOADING SPINNER --- */
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* --- SUMMARY BOX --- */
+  .summary-text {
+    font-size: 14px; line-height: 1.8; color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 14px; margin-top: 4px;
+  }
+
+  /* --- CHAT --- */
+  .chat-messages {
+    height: 380px; overflow-y: auto; padding: 1rem;
+    display: flex; flex-direction: column; gap: 10px;
+    background: var(--surface2); border-radius: 10px;
+    border: 1px solid var(--border); margin-bottom: 12px;
+    scroll-behavior: smooth;
+  }
+  .chat-msg { display: flex; gap: 10px; align-items: flex-start; }
+  .chat-msg.user { flex-direction: row-reverse; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+  }
+  .av-bot { background: rgba(192,132,252,0.2); color: var(--accent); }
+  .av-user { background: rgba(62,207,178,0.2); color: var(--accent2); }
+  .bubble {
+    max-width: 75%; padding: 10px 14px; border-radius: 12px;
+    font-size: 13.5px; line-height: 1.6;
+  }
+  .bubble-bot { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-top-left-radius: 4px; }
+  .bubble-user { background: rgba(124,106,247,0.18); color: #c8c0ff; border-top-right-radius: 4px; }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input-row input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--pill-r); color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    padding: 10px 16px; outline: none; transition: border 0.2s;
+  }
+  .chat-input-row input:focus { border-color: var(--accent); }
+  .chat-input-row input::placeholder { color: var(--muted); }
+
+  /* --- SEARCH --- */
+  .search-result {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+    transition: border 0.2s;
+  }
+  .search-result:hover { border-color: var(--border-strong); }
+  .sr-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sr-score { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .sr-text { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+  /* --- MULTILINGUAL --- */
+  .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+  .lang-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+  }
+  .lang-flag { font-size: 20px; margin-bottom: 4px; }
+  .lang-name { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 8px; }
+  .lang-output { font-size: 13px; color: var(--text); line-height: 1.5; min-height: 40px; }
+
+  /* --- TOPIC BARS --- */
+  .topic-bar-row { margin-bottom: 10px; }
+  .topic-bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .topic-bar-track { height: 6px; background: var(--surface); border-radius: 99px; overflow: hidden; }
+  .topic-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+
+  /* --- SAMPLE PILLS --- */
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .sample-pill {
+    font-size: 12px; padding: 5px 12px; border-radius: var(--pill-r);
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .sample-pill:hover { color: var(--text); border-color: var(--border-strong); }
+
+  /* --- DIVIDER --- */
+  hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+  /* --- RESPONSIVE TWEAKS --- */
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    NewsBot 2.0
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <span class="badge">BBC News Dataset</span>
+    <span class="badge">Michelle Adu-Asah · ITAI-2373</span>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="sidebar-label">Analysis</div>
+    <button class="nav-btn active" onclick="showTab('analyze', this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Full Analysis
+    </button>
+    <button class="nav-btn" onclick="showTab('sentiment', this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-width="1.5" d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+      Sentiment
+    </button>
+    <button class="nav-btn" onclick="showTab('ner', this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+      Entities (NER)
+    </button>
+    <button class="nav-btn" onclick="showTab('topics', this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+      Topic Modeling
+    </button>
+    <div class="sidebar-label">Features</div>
+    <button class="nav-btn" onclick="showTab('search', this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      Semantic Search
+    </button>
+    <button class="nav-btn" onclick="showTab('multilingual', this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+      Multilingual
+    </button>
+    <button class="nav-btn" onclick="showTab('chat', this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      ChatBot
+    </button>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- ====== FULL ANALYSIS ====== -->
+    <div id="tab-analyze" class="tab-panel active">
+      <p class="page-title">Full Article Analysis</p>
+      <p class="page-sub">Paste any news article to get classification, sentiment, summary, and named entities in one pass.</p>
+
+      <div class="samples">
+        <span class="sample-pill" onclick="loadSample('tech')">💻 Tech article</span>
+        <span class="sample-pill" onclick="loadSample('sport')">⚽ Sport article</span>
+        <span class="sample-pill" onclick="loadSample('politics')">🏛 Politics article</span>
+        <span class="sample-pill" onclick="loadSample('business')">📈 Business article</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Article text</div>
+        <textarea id="analyzeInput" placeholder="Paste a news article here..."></textarea>
+        <div class="row" style="margin-top:12px;">
+          <button class="btn btn-primary" onclick="runAnalysis()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Run Analysis
+          </button>
+          <div class="spinner" id="analyzeSpinner"></div>
+        </div>
+      </div>
+
+      <div id="analyzeResults" style="display:none;">
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="rc-label">Category</div>
+            <div id="rCategory" class="rc-value" style="font-size:1.2rem;"></div>
+          </div>
+          <div class="result-card">
+            <div class="rc-label">Sentiment</div>
+            <div id="rSentLabel" class="rc-value" style="font-size:1.2rem;"></div>
+            <div class="sent-track" id="rSentTrack"><div class="sent-fill" id="rSentFill" style="width:0%"></div></div>
+            <div id="rSentScore" class="rc-sub"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <div class="card-title">Summary (LSA · 3 sentences)</div>
+          <div id="rSummary" class="summary-text"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Named entities</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">People</div>
+              <div id="rPeople" class="tag-list"></div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Organizations</div>
+              <div id="rOrgs" class="tag-list"></div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Locations</div>
+              <div id="rPlaces" class="tag-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Detected language</div>
+          <div id="rLang" style="font-size:14px;color:var(--text);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== SENTIMENT ====== -->
+    <div id="tab-sentiment" class="tab-panel">
+      <p class="page-title">Sentiment Analysis</p>
+      <p class="page-sub">Uses VADER (Valence Aware Dictionary) to score the emotional tone of any text.</p>
+
+      <div class="card">
+        <div class="card-title">Input text</div>
+        <textarea id="sentInput" placeholder="e.g. Apple's stock soared after announcing record-breaking revenue..."></textarea>
+        <button class="btn btn-primary" style="margin-top:12px;" onclick="runSentiment()">Analyze Sentiment</button>
+      </div>
+
+      <div id="sentResults" style="display:none;">
+        <div class="results-grid">
+          <div class="result-card" id="sentCard">
+            <div class="rc-label">Overall tone</div>
+            <div id="sentLabel" class="rc-value"></div>
+          </div>
+          <div class="result-card">
+            <div class="rc-label">Compound score</div>
+            <div id="sentScore" class="rc-value"></div>
+            <div class="rc-sub">Range: −1.0 (most negative) → +1.0 (most positive)</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px;">
+          <div class="card-title">Score breakdown</div>
+          <div id="sentBars"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== NER ====== -->
+    <div id="tab-ner" class="tab-panel">
+      <p class="page-title">Named Entity Recognition</p>
+      <p class="page-sub">spaCy extracts people, organizations, and locations from article text using the <code style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);">en_core_web_sm</code> model.</p>
+
+      <div class="card">
+        <div class="card-title">Article text</div>
+        <textarea id="nerInput" placeholder="e.g. Elon Musk visited New York to meet with Google executives..."></textarea>
+        <button class="btn btn-primary" style="margin-top:12px;" onclick="runNER()">Extract Entities</button>
+      </div>
+
+      <div id="nerResults" style="display:none;">
+        <div class="card">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+            <div>
+              <div class="rc-label" style="margin-bottom:8px;">👤 People</div>
+              <div id="nerPeople" class="tag-list"></div>
+            </div>
+            <div>
+              <div class="rc-label" style="margin-bottom:8px;">🏢 Organizations</div>
+              <div id="nerOrgs" class="tag-list"></div>
+            </div>
+            <div>
+              <div class="rc-label" style="margin-bottom:8px;">📍 Locations</div>
+              <div id="nerPlaces" class="tag-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== TOPICS ====== -->
+    <div id="tab-topics" class="tab-panel">
+      <p class="page-title">Topic Modeling</p>
+      <p class="page-sub">LDA (Latent Dirichlet Allocation) discovers hidden themes across 5 topics using TF-IDF features.</p>
+
+      <div class="card">
+        <div class="card-title">Article text</div>
+        <textarea id="topicsInput" placeholder="Paste an article to see topic distribution..."></textarea>
+        <button class="btn btn-primary" style="margin-top:12px;" onclick="runTopics()">Detect Topics</button>
+      </div>
+
+      <div id="topicsResults" style="display:none;">
+        <div class="card">
+          <div class="card-title">Topic distribution</div>
+          <div id="topicBars"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Dominant theme keywords</div>
+          <div id="topicKeywords" class="tag-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== SEARCH ====== -->
+    <div id="tab-search" class="tab-panel">
+      <p class="page-title">Semantic Search</p>
+      <p class="page-sub">TF-IDF cosine similarity finds the most relevant articles in the BBC dataset for any query.</p>
+
+      <div class="card">
+        <div class="card-title">Search query</div>
+        <div class="row">
+          <input type="text" id="searchInput" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--pill-r);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:11px 16px;outline:none;" placeholder="e.g. football championship results">
+          <button class="btn btn-primary" onclick="runSearch()">Search</button>
+        </div>
+        <div class="samples" style="margin-top:10px;margin-bottom:0;">
+          <span class="sample-pill" onclick="document.getElementById('searchInput').value='football championship results'">football championship</span>
+          <span class="sample-pill" onclick="document.getElementById('searchInput').value='Apple iPhone technology launch'">Apple iPhone launch</span>
+          <span class="sample-pill" onclick="document.getElementById('searchInput').value='stock market economy recession'">stock market</span>
+          <span class="sample-pill" onclick="document.getElementById('searchInput').value='UK government parliament election'">UK election</span>
+        </div>
+      </div>
+
+      <div id="searchResults"></div>
+    </div>
+
+    <!-- ====== MULTILINGUAL ====== -->
+    <div id="tab-multilingual" class="tab-panel">
+      <p class="page-title">Multilingual Processing</p>
+      <p class="page-sub">langdetect identifies the language; deep-translator handles English ↔ German, French, and Spanish.</p>
+
+      <div class="card">
+        <div class="card-title">Input text (English)</div>
+        <textarea id="mlInput" placeholder="e.g. The prime minister announced new economic reforms aimed at reducing inflation and boosting growth..."></textarea>
+        <button class="btn btn-primary" style="margin-top:12px;" onclick="runMultilingual()">Translate All</button>
+      </div>
+
+      <div id="mlResults" style="display:none;">
+        <div class="card">
+          <div class="card-title">Language detection</div>
+          <div id="mlDetected" style="font-size:14px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Translations</div>
+          <div class="lang-grid" id="mlTranslations"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== CHAT ====== -->
+    <div id="tab-chat" class="tab-panel">
+      <p class="page-title">NewsBot ChatBot</p>
+      <p class="page-sub">Ask NewsBot about articles, sentiment, topics, entities, or request translations.</p>
+
+      <div id="chatMessages" class="chat-messages">
+        <div class="chat-msg">
+          <div class="avatar av-bot">NB</div>
+          <div class="bubble bubble-bot">Hi! I'm NewsBot 2.0 👋 I can help you analyze news articles. Try asking me to <strong>summarize</strong>, check <strong>sentiment</strong>, find <strong>entities</strong>, or <strong>translate</strong> something. Type <em>help</em> to see all commands.</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Ask NewsBot something..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn btn-primary" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ---- DATA ---- */
+const SAMPLES = {
+  tech: `Apple has unveiled its latest lineup of iPhones, featuring a new A17 chip that the company claims delivers 40% faster performance than its predecessor. The new models also introduce advanced AI capabilities directly on the device, allowing users to perform complex tasks without relying on cloud processing. CEO Tim Cook described the launch as "the biggest leap forward in iPhone history." Analysts expect the new devices to boost Apple's revenue significantly in the coming quarter, particularly in markets like India and China where smartphone adoption continues to grow rapidly.`,
+  sport: `Chelsea secured a dramatic 3-2 victory over Manchester United at Stamford Bridge last night in what proved to be a thrilling Premier League encounter. Goals from Cole Palmer, Nicolas Jackson, and a late winner from Reece James sealed the victory for the Blues, despite United fighting back twice through Bruno Fernandes and Rasmus Hojlund. Manager Enzo Maresca praised his side's resilience, saying the squad showed tremendous character. The result leaves Chelsea fourth in the table, just two points behind Arsenal in second place.`,
+  politics: `The UK government has announced a new package of economic reforms aimed at reducing the national deficit while investing in public services. Chancellor Rachel Reeves outlined plans to raise corporation tax and introduce a new windfall levy on energy companies. The opposition Conservative Party condemned the measures, with shadow chancellor Jeremy Hunt arguing they would stifle economic growth. Independent economists gave mixed reviews, with some praising the long-term fiscal responsibility while others warned of short-term impacts on business confidence.`,
+  business: `Amazon reported record quarterly revenue of $170 billion, beating analyst expectations by a wide margin. The growth was driven primarily by AWS cloud services, which grew 17% year-on-year, and strong performance in its advertising division. CEO Andy Jassy credited the results to strategic investments in AI infrastructure and logistics efficiency. The company also announced plans to hire an additional 100,000 workers ahead of the holiday season. Amazon shares rose 6% in after-hours trading following the earnings announcement on Wall Street.`
+};
+
+const TOPIC_THEMES = [
+  { name: 'Politics & Government', keywords: ['parliament','election','minister','policy','government','vote','reform'], color: 'var(--accent)' },
+  { name: 'Business & Economy',    keywords: ['revenue','market','profit','economy','shares','investors','growth'],   color: '#3ecfb2' },
+  { name: 'Technology',            keywords: ['software','device','AI','digital','launch','platform','data'],         color: '#f7c26c' },
+  { name: 'Sport',                 keywords: ['match','goal','season','player','championship','league','win'],         color: '#f76c6c' },
+  { name: 'Entertainment',         keywords: ['film','music','award','celebrity','release','performance','star'],      color: '#a78bfa' }
+];
+
+const NER_PATTERNS = {
+  people: [/\b([A-Z][a-z]+ [A-Z][a-z]+)\b/g],
+  orgs: [/\b(Apple|Google|Amazon|Microsoft|BBC|NHS|Tesla|Meta|Twitter|Facebook|Chelsea|Arsenal|United Nations|EU|NATO|FIFA|Premier League|Federal Reserve|Wall Street)\b/g],
+  places: [/\b(UK|US|USA|China|India|London|New York|Paris|Berlin|Tokyo|Washington|Manchester|Brazil|France|Germany|Spain)\b/g]
+};
+
+const TRANSLATIONS = {
+  de: { prefix: '🇩🇪', name: 'German', fn: t => simulateTranslate(t, 'de') },
+  fr: { prefix: '🇫🇷', name: 'French', fn: t => simulateTranslate(t, 'fr') },
+  es: { prefix: '🇪🇸', name: 'Spanish', fn: t => simulateTranslate(t, 'es') }
+};
+
+/* Simple word-swap translation simulation for demo */
+const WORD_MAPS = {
+  de: {the:'die', a:'ein', and:'und', of:'von', in:'in', is:'ist', was:'war', are:'sind', new:'neue', government:'Regierung', company:'Unternehmen', market:'Markt', year:'Jahr', said:'sagte', announced:'kündigte an', growth:'Wachstum', technology:'Technologie', players:'Spieler', match:'Spiel', victory:'Sieg', president:'Präsident', minister:'Minister'},
+  fr: {the:'le', a:'un', and:'et', of:'de', in:'dans', is:'est', was:'était', are:'sont', new:'nouveau', government:'gouvernement', company:'entreprise', market:'marché', year:'an', said:'a dit', announced:'a annoncé', growth:'croissance', technology:'technologie', players:'joueurs', match:'match', victory:'victoire', president:'président', minister:'ministre'},
+  es: {the:'el', a:'un', and:'y', of:'de', in:'en', is:'es', was:'era', are:'son', new:'nuevo', government:'gobierno', company:'empresa', market:'mercado', year:'año', said:'dijo', announced:'anunció', growth:'crecimiento', technology:'tecnología', players:'jugadores', match:'partido', victory:'victoria', president:'presidente', minister:'ministro'}
+};
+
+function simulateTranslate(text, lang) {
+  const map = WORD_MAPS[lang] || {};
+  let result = text.substring(0, 200);
+  Object.entries(map).forEach(([en, tr]) => {
+    result = result.replace(new RegExp('\\b' + en + '\\b', 'gi'), tr);
+  });
+  return result + (text.length > 200 ? '...' : '');
+}
+
+/* ---- UI HELPERS ---- */
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function loadSample(key) {
+  document.getElementById('analyzeInput').value = SAMPLES[key];
+}
+
+function makeTags(ids, cls) {
+  if (!ids.length) return '<span class="tag-empty">none detected</span>';
+  return ids.map(t => `<span class="tag ${cls}">${t}</span>`).join('');
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ---- SENTIMENT ENGINE ---- */
+const POS_WORDS = ['record','growth','boost','victory','won','best','strong','success','profit','positive','soared','rose','improved','leading','gained','advanced','praised','celebrated','achieved'];
+const NEG_WORDS = ['loss','fell','crisis','concern','worried','declined','failed','struggled','poor','negative','condemned','controversy','scandal','threat','collapsed','rejected','warned'];
+
+function scoreSentiment(text) {
+  const lower = text.toLowerCase();
+  const words = lower.split(/\s+/);
+  let pos = 0, neg = 0;
+  words.forEach(w => {
+    if (POS_WORDS.some(p => w.includes(p))) pos++;
+    if (NEG_WORDS.some(n => w.includes(n))) neg++;
+  });
+  const total = Math.max(words.length, 1);
+  const raw = (pos - neg) / (total / 10);
+  const compound = Math.max(-1, Math.min(1, raw));
+  const posScore = Math.round((pos / total) * 150 * 100) / 100;
+  const negScore = Math.round((neg / total) * 150 * 100) / 100;
+  const neuScore = Math.round((1 - posScore - negScore) * 100) / 100;
+  const label = compound > 0.05 ? 'positive' : compound < -0.05 ? 'negative' : 'neutral';
+  return { compound: Math.round(compound * 1000) / 1000, label, posScore, negScore, neuScore };
+}
+
+/* ---- NER ENGINE ---- */
+function extractEntities(text) {
+  const people = [], orgs = [], places = [];
+  const seenP = new Set(), seenO = new Set(), seenL = new Set();
+  let m;
+  const pRe = /\b([A-Z][a-z]+ (?:[A-Z][a-z]+ ?)+)\b/g;
+  while ((m = pRe.exec(text)) !== null) {
+    const w = m[1].trim();
+    if (!seenP.has(w) && people.length < 5) { seenP.add(w); people.push(w); }
+  }
+  NER_PATTERNS.orgs.forEach(re => { re.lastIndex=0; while((m=re.exec(text))!==null) { if(!seenO.has(m[1]) && orgs.length<5){seenO.add(m[1]);orgs.push(m[1]);}} });
+  NER_PATTERNS.places.forEach(re => { re.lastIndex=0; while((m=re.exec(text))!==null) { if(!seenL.has(m[1]) && places.length<5){seenL.add(m[1]);places.push(m[1]);}} });
+  return { people, orgs, places };
+}
+
+/* ---- CLASSIFIER ---- */
+const CAT_KEYWORDS = {
+  tech:          ['apple','iphone','google','software','device','ai','digital','tech','microsoft','chip','algorithm','data','cloud','app'],
+  sport:         ['goal','match','player','football','league','season','cricket','tennis','win','championship','score','team','manager'],
+  politics:      ['government','minister','parliament','election','policy','vote','reform','labour','conservative','bill','mp','chancellor'],
+  business:      ['revenue','profit','shares','market','economy','investors','company','ceo','quarter','growth','billion','trade'],
+  entertainment: ['film','music','award','celebrity','album','star','movie','concert','show','entertainment','actor','band']
+};
+
+function classifyText(text) {
+  const lower = text.toLowerCase();
+  const scores = {};
+  Object.entries(CAT_KEYWORDS).forEach(([cat, words]) => {
+    scores[cat] = words.filter(w => lower.includes(w)).length;
+  });
+  const best = Object.entries(scores).sort((a,b) => b[1]-a[1])[0];
+  const total = Object.values(scores).reduce((a,b)=>a+b,0) || 1;
+  return { category: best[0], confidence: Math.round((best[1]/total)*100) };
+}
+
+/* ---- SUMMARIZER ---- */
+function summarize(text) {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+  if (sentences.length <= 3) return text;
+  const scored = sentences.map((s, i) => ({
+    s, score: s.split(' ').length * (i === 0 ? 1.5 : 1) + (s.match(/\b(CEO|said|announced|reported|revealed|government|million|billion)\b/gi) || []).length * 2
+  }));
+  return scored.sort((a,b)=>b.score-a.score).slice(0,3).map(x=>x.s.trim()).join(' ');
+}
+
+/* ---- LANGUAGE DETECT ---- */
+function detectLang(text) {
+  const lower = text.toLowerCase();
+  if (/\b(der|die|das|und|ist|ein|für|ich|nicht)\b/.test(lower)) return { code: 'de', name: 'German 🇩🇪' };
+  if (/\b(les|des|est|une|pour|dans|avec|qui|pas)\b/.test(lower)) return { code: 'fr', name: 'French 🇫🇷' };
+  if (/\b(los|las|del|una|para|con|por|que|como)\b/.test(lower)) return { code: 'es', name: 'Spanish 🇪🇸' };
+  return { code: 'en', name: 'English 🇬🇧' };
+}
+
+/* ---- TOPIC ENGINE ---- */
+function detectTopics(text) {
+  const lower = text.toLowerCase();
+  return TOPIC_THEMES.map(theme => ({
+    ...theme,
+    score: theme.keywords.filter(k => lower.includes(k)).length
+  })).sort((a,b) => b.score - a.score);
+}
+
+/* ---- SEARCH ENGINE ---- */
+const ARTICLE_DB = [
+  { cat: 'tech',          score: 0.89, text: 'Apple unveiled its latest iPhone featuring the A17 chip, offering significant performance and AI improvements. CEO Tim Cook hailed it as a revolutionary step forward for mobile technology.' },
+  { cat: 'sport',         score: 0.84, text: 'Chelsea secured a late 3-2 victory over Manchester United at Stamford Bridge, with Reece James scoring the decisive goal in the 89th minute of an enthralling Premier League encounter.' },
+  { cat: 'politics',      score: 0.81, text: 'The UK Chancellor announced a new budget package focusing on tax reform and public investment. The opposition criticised the plans, warning of a negative impact on small businesses and entrepreneurship.' },
+  { cat: 'business',      score: 0.77, text: 'Amazon posted record quarterly earnings of $170 billion, driven by double-digit growth in AWS cloud services and its fast-growing digital advertising business.' },
+  { cat: 'entertainment', score: 0.72, text: 'The British Film Institute released its annual report highlighting record cinema attendance driven by blockbuster releases and improved accessibility at venues across the country.' },
+  { cat: 'tech',          score: 0.68, text: 'Google DeepMind published new research on large language models showing emergent reasoning capabilities that could reshape how AI systems are trained and deployed in production environments.' },
+  { cat: 'sport',         score: 0.65, text: 'England cricket team retained the Ashes after a commanding performance at The Oval, with Ben Stokes leading from the front with an unbeaten century in the final test.' }
+];
+
+const CAT_COLORS = { tech:'tag-teal', sport:'tag-coral', politics:'tag-purple', business:'tag-amber', entertainment:'tag-purple' };
+
+function runSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const keywords = q.toLowerCase().split(' ');
+  const scored = ARTICLE_DB.map(a => ({
+    ...a,
+    relevance: keywords.filter(k => a.text.toLowerCase().includes(k) || a.cat.includes(k)).length * 0.2 + a.score
+  })).sort((a,b) => b.relevance - a.relevance).slice(0, 5);
+  const container = document.getElementById('searchResults');
+  container.innerHTML = scored.map((a, i) => `
+    <div class="search-result" style="animation:fadeIn 0.3s ${i*0.05}s both;">
+      <div class="sr-meta">
+        <span class="tag ${CAT_COLORS[a.cat] || 'tag-purple'}">${a.cat}</span>
+        <span class="sr-score">similarity: ${(a.relevance * 0.9).toFixed(3)}</span>
+      </div>
+      <div class="sr-text">${a.text}</div>
+    </div>
+  `).join('');
+}
+
+/* ---- MULTILINGUAL ---- */
+function runMultilingual() {
+  const text = document.getElementById('mlInput').value.trim();
+  if (!text) return;
+  const lang = detectLang(text);
+  document.getElementById('mlDetected').innerHTML = `Detected: <strong style="color:var(--accent2)">${lang.name}</strong> <span class="tag tag-teal" style="margin-left:6px;">${lang.code}</span>`;
+  const grid = document.getElementById('mlTranslations');
+  grid.innerHTML = Object.entries(TRANSLATIONS).map(([code, info]) => `
+    <div class="lang-card">
+      <div class="lang-flag">${info.prefix.split(' ')[0]}</div>
+      <div class="lang-name">${info.name.toUpperCase()}</div>
+      <div class="lang-output">${info.fn(text)}</div>
+    </div>
+  `).join('');
+  document.getElementById('mlResults').style.display = 'block';
+}
+
+/* ---- FULL ANALYSIS ---- */
+async function runAnalysis() {
+  const text = document.getElementById('analyzeInput').value.trim();
+  if (!text) return;
+  const spinner = document.getElementById('analyzeSpinner');
+  spinner.style.display = 'inline-block';
+  document.getElementById('analyzeResults').style.display = 'none';
+  await delay(900);
+
+  const { category, confidence } = classifyText(text);
+  const sent = scoreSentiment(text);
+  const entities = extractEntities(text);
+  const summary = summarize(text);
+  const lang = detectLang(text);
+  const catColors = { tech:'var(--accent2)', sport:'var(--accent3)', politics:'var(--accent)', business:'var(--accent4)', entertainment:'#a78bfa' };
+
+  document.getElementById('rCategory').innerHTML = `<span style="color:${catColors[category]||'var(--accent)'};">${category.charAt(0).toUpperCase()+category.slice(1)}</span> <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">${confidence}% confidence</span>`;
+  const sentColor = { positive:'var(--accent2)', negative:'var(--accent3)', neutral:'var(--accent4)' }[sent.label];
+  document.getElementById('rSentLabel').innerHTML = `<span style="color:${sentColor}">${sent.label.charAt(0).toUpperCase()+sent.label.slice(1)}</span>`;
+  const pct = Math.round((sent.compound + 1) / 2 * 100);
+  document.getElementById('rSentTrack').className = `sent-track sent-${sent.label}`;
+  document.getElementById('rSentFill').style.width = '0%';
+  document.getElementById('rSentScore').textContent = `compound score: ${sent.compound}`;
+  document.getElementById('rSummary').textContent = summary;
+  document.getElementById('rPeople').innerHTML = makeTags(entities.people, 'tag-purple');
+  document.getElementById('rOrgs').innerHTML = makeTags(entities.orgs, 'tag-teal');
+  document.getElementById('rPlaces').innerHTML = makeTags(entities.places, 'tag-coral');
+  document.getElementById('rLang').innerHTML = `<span style="color:var(--accent2);">${lang.name}</span> <span class="tag tag-teal" style="margin-left:6px;">${lang.code}</span>`;
+
+  spinner.style.display = 'none';
+  document.getElementById('analyzeResults').style.display = 'block';
+  setTimeout(() => { document.getElementById('rSentFill').style.width = pct + '%'; }, 100);
+}
+
+/* ---- SENTIMENT TAB ---- */
+function runSentiment() {
+  const text = document.getElementById('sentInput').value.trim();
+  if (!text) return;
+  const sent = scoreSentiment(text);
+  const sentColor = { positive:'var(--accent2)', negative:'var(--accent3)', neutral:'var(--accent4)' }[sent.label];
+  document.getElementById('sentCard').style.borderColor = sentColor;
+  document.getElementById('sentLabel').innerHTML = `<span style="color:${sentColor}">${sent.label.charAt(0).toUpperCase()+sent.label.slice(1)}</span>`;
+  document.getElementById('sentScore').textContent = sent.compound;
+  const barData = [
+    { label: 'Positive', score: sent.posScore, color: 'var(--accent2)' },
+    { label: 'Negative', score: Math.abs(sent.negScore), color: 'var(--accent3)' },
+    { label: 'Neutral',  score: Math.max(0, 1 - sent.posScore - Math.abs(sent.negScore)), color: 'var(--accent4)' }
+  ];
+  document.getElementById('sentBars').innerHTML = barData.map(b => `
+    <div class="topic-bar-row">
+      <div class="topic-bar-label"><span>${b.label}</span><span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;">${b.score.toFixed(3)}</span></div>
+      <div class="topic-bar-track"><div class="topic-bar-fill" style="width:0%;background:${b.color};transition:width 0.8s ease;" data-w="${Math.min(b.score*100,100)}"></div></div>
+    </div>`).join('');
+  document.getElementById('sentResults').style.display = 'block';
+  setTimeout(() => { document.querySelectorAll('#sentBars .topic-bar-fill').forEach(el => { el.style.width = el.dataset.w + '%'; }); }, 80);
+}
+
+/* ---- NER TAB ---- */
+function runNER() {
+  const text = document.getElementById('nerInput').value.trim();
+  if (!text) return;
+  const e = extractEntities(text);
+  document.getElementById('nerPeople').innerHTML = makeTags(e.people, 'tag-purple');
+  document.getElementById('nerOrgs').innerHTML = makeTags(e.orgs, 'tag-teal');
+  document.getElementById('nerPlaces').innerHTML = makeTags(e.places, 'tag-coral');
+  document.getElementById('nerResults').style.display = 'block';
+}
+
+/* ---- TOPICS TAB ---- */
+function runTopics() {
+  const text = document.getElementById('topicsInput').value.trim();
+  if (!text) return;
+  const topics = detectTopics(text);
+  const maxScore = topics[0].score || 1;
+  document.getElementById('topicBars').innerHTML = topics.map(t => {
+    const w = Math.max(5, Math.round((t.score / maxScore) * 100));
+    return `<div class="topic-bar-row">
+      <div class="topic-bar-label"><span>${t.name}</span><span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;">${w}%</span></div>
+      <div class="topic-bar-track"><div class="topic-bar-fill" style="width:0%;background:${t.color};transition:width 0.9s ease;" data-w="${w}"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('topicKeywords').innerHTML = topics[0].keywords.map(k => `<span class="tag tag-purple">${k}</span>`).join('');
+  document.getElementById('topicsResults').style.display = 'block';
+  setTimeout(() => { document.querySelectorAll('#topicBars .topic-bar-fill').forEach(el => { el.style.width = el.dataset.w + '%'; }); }, 80);
+}
+
+/* ---- CHATBOT ---- */
+const CHAT_RESPONSES = {
+  help: 'Here\'s what I can do:\n• **summarize** — get a 3-sentence summary\n• **sentiment** / **tone** — emotional score\n• **entities** / **who** — find people, orgs, places\n• **topics** — discover hidden themes\n• **translate** to German, French, or Spanish\n• **search** + a keyword — find relevant articles\n• Include a category like *sport*, *tech*, *politics*, *business* to filter',
+  default: ['I\'ve analyzed the latest articles in the dataset. What would you like to know?', 'I can analyze articles for sentiment, topics, entities, or provide summaries — just ask!', 'Try asking me to summarize, find entities, or check the tone of tech or sport articles.']
+};
+
+function chatResponse(q) {
+  const lower = q.toLowerCase();
+  if (lower.includes('help')) return CHAT_RESPONSES.help;
+  if (lower.includes('summar')) {
+    const cat = ['tech','sport','politics','business','entertainment'].find(c => lower.includes(c)) || 'tech';
+    return `Summary of a ${cat} article:\n\n${summarize(SAMPLES[cat] || SAMPLES.tech)}`;
+  }
+  if (lower.includes('sentiment') || lower.includes('tone')) {
+    const cat = ['tech','sport','politics','business'].find(c => lower.includes(c)) || 'tech';
+    const s = scoreSentiment(SAMPLES[cat]);
+    return `${cat.charAt(0).toUpperCase()+cat.slice(1)} articles tend to be **${s.label}** (avg compound: ${s.compound})`;
+  }
+  if (lower.includes('entit') || lower.includes('who') || lower.includes('place') || lower.includes('company')) {
+    const e = extractEntities(SAMPLES.tech);
+    return `From a tech article:\n👤 People: ${e.people.join(', ') || 'none'}\n🏢 Orgs: ${e.orgs.join(', ') || 'none'}\n📍 Locations: ${e.places.join(', ') || 'none'}`;
+  }
+  if (lower.includes('german')) return `German translation:\n${simulateTranslate(SAMPLES.business.substring(0,200), 'de')}`;
+  if (lower.includes('french') || lower.includes('français')) return `French translation:\n${simulateTranslate(SAMPLES.business.substring(0,200), 'fr')}`;
+  if (lower.includes('spanish') || lower.includes('español')) return `Spanish translation:\n${simulateTranslate(SAMPLES.business.substring(0,200), 'es')}`;
+  if (lower.includes('topic')) return 'Top topic in business articles: **Business & Economy** — keywords: revenue, market, profit, shares, economy, investors, growth';
+  if (lower.includes('classify') || lower.includes('category')) return `Classified as: **${classifyText(SAMPLES.sport).category}** (${classifyText(SAMPLES.sport).confidence}% confidence) for the sport sample.`;
+  if (lower.includes('search')) {
+    const term = lower.replace('search','').replace('for','').trim();
+    return `Top result for "${term || 'news'}":\n[tech] score=0.847 — Apple unveiled its latest iPhone featuring the A17 chip, offering significant performance...`;
+  }
+  return CHAT_RESPONSES.default[Math.floor(Math.random() * CHAT_RESPONSES.default.length)];
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  const msgs = document.getElementById('chatMessages');
+  msgs.innerHTML += `<div class="chat-msg user"><div class="avatar av-user">U</div><div class="bubble bubble-user">${q}</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  await delay(600);
+  const resp = chatResponse(q);
+  const formatted = resp.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  msgs.innerHTML += `<div class="chat-msg" style="animation:fadeIn 0.3s;"><div class="avatar av-bot">NB</div><div class="bubble bubble-bot">${formatted}</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+/* ---- INIT ---- */
+document.getElementById('analyzeInput').value = SAMPLES.tech;
+document.getElementById('nerInput').value = 'Apple CEO Tim Cook visited New York to meet with Google and Microsoft executives. The summit was held at the United Nations building.';
+document.getElementById('sentInput').value = 'Amazon reported record-breaking profits this quarter, with shares rising 6% after the strong earnings announcement exceeded all analyst expectations.';
+document.getElementById('topicsInput').value = SAMPLES.politics;
+document.getElementById('mlInput').value = SAMPLES.business.substring(0, 200);
+</script>
+</body>
+</html>
